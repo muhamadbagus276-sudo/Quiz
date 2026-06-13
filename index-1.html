@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tantangan Pengunjung ICU</title>
+<style>
+body{margin:0;font-family:system-ui;background:#eef6ff;display:flex;justify-content:center;align-items:center;min-height:100vh}
+.card{background:#fff;width:min(900px,95vw);padding:20px;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.1)}
+h1{text-align:center;color:#0b67c2}button{padding:12px 18px;border:none;border-radius:10px;background:#0b67c2;color:#fff;cursor:pointer}
+.progress{height:10px;background:#ddd;border-radius:99px;overflow:hidden}.bar{height:100%;background:#16a34a;width:0%}
+.opt{display:block;width:100%;margin:8px 0;padding:12px;border:1px solid #ccc;border-radius:10px;background:#fff;cursor:pointer}
+#msg{text-align:center;font-weight:bold}
+canvas{position:fixed;inset:0;pointer-events:none}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="card" id="app"></div>
+<script>
+const quiz=[
+["Sebelum memasuki ruang ICU, pengunjung wajib:",["Menggunakan masker dengan benar","Membuka alas kaki","Membawa makanan","Menggunakan jaket"],0],
+["Masker yang digunakan harus:",["Menutupi hidung dan mulut dengan baik","Digantung di dagu","Menutupi mulut saja","Dilepas saat berbicara"],0],
+["Jam besuk ICU adalah:",["Sesuai jadwal yang telah ditetapkan rumah sakit","Kapan saja","24 jam penuh","Bebas tanpa aturan"],0],
+["Berapa langkah cuci tangan WHO?",["6 langkah","3 langkah","4 langkah","10 langkah"],0],
+["Langkah pertama cuci tangan adalah:",["Menggosok kedua telapak tangan","Membersihkan kuku","Menggosok ibu jari","Menggosok pergelangan tangan"],0],
+["Mengapa cuci tangan penting?",["Mencegah penyebaran infeksi","Agar tangan wangi","Menghilangkan keringat","Sebagai formalitas"],0],
+["Jika sedang batuk, pilek, atau demam:",["Menunda kunjungan ke ICU","Tetap berkunjung","Membuka masker","Mempercepat kunjungan"],0]
+];
+const app=document.getElementById('app');
+let state=JSON.parse(localStorage.getItem('icuquiz')||'{"i":-1,"done":false}');
+function beep(ok){const a=new(window.AudioContext||window.webkitAudioContext)();const o=a.createOscillator();const g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=ok?700:220;g.gain.value=.05;o.start();o.stop(a.currentTime+.15)}
+function save(){localStorage.setItem('icuquiz',JSON.stringify(state));}
+function start(){
+if(state.done)return finish();
+if(state.i<0){app.innerHTML='<h1>Tantangan Pengunjung ICU</h1><p style="text-align:center">Jawab seluruh pertanyaan dengan benar untuk mendapatkan akses WiFi dan memahami tata tertib ICU</p><div style="text-align:center"><button id=s>Mulai Quiz</button></div>';s.onclick=()=>{state.i=0;save();render();};return;}
+render();
+}
+function render(){
+const q=quiz[state.i];
+let p=(state.i/quiz.length)*100;
+app.innerHTML=`<div class=progress><div class=bar style="width:${p}%"></div></div><h2>Soal ${state.i+1}/${quiz.length}</h2><p>${q[0]}</p><div id=o></div><div id=msg></div>`;
+const o=document.getElementById('o');
+q[1].forEach((t,i)=>{let b=document.createElement('button');b.className='opt';b.textContent=t;b.onclick=()=>ans(i);o.appendChild(b);});
+}
+function ans(i){
+const m=document.getElementById('msg');
+if(i===quiz[state.i][2]){
+beep(true);m.textContent='Benar!';m.style.color='green';
+setTimeout(()=>{state.i++; if(state.i>=quiz.length){state.done=true;} save(); state.done?finish():render();},600);
+}else{beep(false);m.textContent='Jawaban belum tepat. Silakan coba lagi.';m.style.color='red';}
+}
+function finish(){
+app.innerHTML=`<h1>🎉 SELAMAT 🎉</h1><p>Anda telah memahami tata tertib dan pencegahan infeksi di ICU.</p><div style="padding:15px;border:2px dashed #16a34a;text-align:center;font-size:24px;font-weight:bold">ICCU-GUEST-2026</div><br><button id=copy>Salin Password</button> <button id=reset>Ulangi Quiz</button>`;
+copy.onclick=async()=>{try{await navigator.clipboard.writeText('ICCU-GUEST-2026');alert('Password disalin');}catch(e){alert('ICCU-GUEST-2026');}};
+reset.onclick=()=>{localStorage.removeItem('icuquiz');state={i:-1,done:false};start();};
+confetti();
+}
+function confetti(){
+const c=document.getElementById('c'),x=c.getContext('2d');c.width=innerWidth;c.height=innerHeight;
+let p=[...Array(120)].map(()=>({x:Math.random()*c.width,y:Math.random()*-c.height,v:2+Math.random()*4,s:3+Math.random()*5}));
+(function f(){x.clearRect(0,0,c.width,c.height);p.forEach(a=>{a.y+=a.v;x.fillRect(a.x,a.y,a.s,a.s);if(a.y>c.height)a.y=-10;});requestAnimationFrame(f);})();
+}
+start();
+</script>
+</body>
+</html>
